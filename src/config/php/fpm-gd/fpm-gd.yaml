@@ -1,0 +1,18 @@
+service-version: '7.4'
+
+image: 'php:7.4-fpm'
+
+volumes:
+  './': /www
+
+os_type: 'debian'
+
+requires:
+  php:
+    host-os:
+      - gd
+    php-ext:
+      - gd
+
+finalCommands:
+  - 'php-fpm'

@@ -1,0 +1,70 @@
+#!/usr/bin/env php
+<?php
+require __DIR__.'/vendor/autoload.php';
+
+require('DockerComposeGenerator.php');
+require('YamlReader.php');
+require('RequirementsManager.php');
+require('ConfigFileManager.php');
+require('DependencyManager.php');
+
+
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\SingleCommandApplication;
+
+(new SingleCommandApplication())
+    ->setName('PHP Project Creator')
+    ->setVersion('1.0.0')
+    ->setHelp('Thank you for using PHP Project Creator. Create your ready-to-use docker-compose.yml 
+        files for all your favourite web app environments with a few simple commands and parameters.')
+    ->setDescription('PHP Project Creator - A CLI tool to create docker-compose.yml files for many well-known web development environments.')
+    ->addArgument('command', InputArgument::REQUIRED, 'Create project with "create", list all available options with "list".')
+    ->addOption('php', null, InputOption::VALUE_REQUIRED, 'PHP version of the service')
+    ->addOption('webserver', null, InputOption::VALUE_REQUIRED, 'Webserver system and version for the service')
+    ->addOption('database', null, InputOption::VALUE_REQUIRED, 'Database type and version of the service')
+    ->setCode(function (InputInterface $input, OutputInterface $output) {
+        $command = $input->getArgument('command');
+        $configFileManager = new ConfigFileManager();
+        if ($command == 'list') {
+            $configurations = $configFileManager->getAvailableConfigurations();
+            $output->writeln('Webservers:');
+            foreach ($configurations['webservers'] as $server) {
+                $output->writeln('- ' . $server);
+            }
+            $output->writeln('PHP Versions:');
+            foreach ($configurations['phpVersions'] as $phpVersion) {
+                $output->writeln('- ' . $phpVersion);
+            }
+            $output->writeln('Databases:');
+            foreach ($configurations['databases'] as $database) {
+                $output->writeln('- ' . $database);
+            }
+            return Command::SUCCESS;
+        }
+        $phpversion = $input->getOption('php');
+        $webserver = $input->getOption('webserver');
+        $database = $input->getOption('database');
+        $outputPath = $phpversion . '-' . $webserver . '-' . $database;
+        $outputPath = preg_replace( '/[^a-z0-9]+/', '-', strtolower($outputPath));
+        $yamlReader = new YamlReader($phpversion, $webserver, $database);
+        $yamlConfig = $yamlReader->getFullConfig();
+        $dependencyManager = new DependencyManager();
+        $dependencyCheckResults = $dependencyManager->checkDependencies($yamlConfig);
+        if (!$dependencyCheckResults['success']) {
+            $output->writeln('Error: Dependency requirements are not entirely met by project configuration:');
+            $output->writeln($dependencyCheckResults['messages']);
+            return Command::FAILURE;
+        }
+
+        $configFileManager->copyConfigFiles($phpversion, $webserver, $database, $outputPath);
+        $configFileManager->copyEntrypoint($outputPath);
+        $generator = new DockerComposeGenerator($yamlConfig);
+        $generator->prepare();
+        $output->writeln($generator->emit($outputPath) ? 'Successfully created docker-compose.yml for the project in folder ' . $outputPath : 'Error trying to create the project.');
+        return Command::SUCCESS;
+    })
+    ->run();

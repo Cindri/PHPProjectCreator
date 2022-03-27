@@ -1,0 +1,10 @@
+version: '3.1'
+services:
+  php-server:
+    build: .
+    ports:
+      - "8080:80"
+    command:
+      - php -S 0.0.0.0:80 -t /var/www
+    volumes:
+      - ./src:/var/www

@@ -1,0 +1,19 @@
+container_name: 'apache-webserver'
+
+image: 'php:8.0-apache'
+
+is-php-installed: 1
+
+ports:
+  host: 8000
+  client: 80
+
+depends_on:
+  - db
+
+volumes:
+  './': '/var/www/html/'
+
+finalCommands:
+  - 'echo ''restart...'''
+  - 'apache2-foreground'

@@ -1,0 +1,21 @@
+container_name: 'nginx-webserver'
+
+image: 'nginx:1.13-alpine'
+
+os_type: 'alpine'
+
+ports:
+  host: 80
+  client: 80
+
+volumes:
+  './': /www
+  './config/webserver/nginx/config.txt': /etc/nginx/conf.d/default.conf
+
+links:
+  - php
+
+dependencies:
+  php:
+    type: 'fpm'
+    version: '7.2'
