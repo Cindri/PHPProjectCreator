@@ -1,0 +1,18 @@
+image: 'postgres:10.5'
+
+restart: 'always'
+
+environment:
+  POSTGRES_USER: 'postgres'
+  POSTGRES_PASSWORD: 'postgres'
+
+ports:
+  host: 5483
+  client: 5432
+
+requires:
+  webserver:
+    host-os:
+      - postgres
+    php-ext:
+      - postgres
