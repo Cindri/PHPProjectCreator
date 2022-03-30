@@ -1,0 +1,5 @@
+service-version: '8.0'
+
+image: 'php:8.0.5-fpm-alpine'
+
+os_type: 'alpine'

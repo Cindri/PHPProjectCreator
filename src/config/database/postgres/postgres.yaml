@@ -16,3 +16,7 @@ requires:
       - postgres
     php-ext:
       - postgres
+
+dependencies:
+  php:
+    version: 7.4
